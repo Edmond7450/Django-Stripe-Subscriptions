@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
+import my_settings
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -125,10 +127,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [Path(BASE_DIR).joinpath('static')]
 
-STRIPE_PUBLISHABLE_KEY = '<your test publishable key here>'
-STRIPE_SECRET_KEY = '<your test secret key here>'
-STRIPE_PRICE_ID = '<your price api id here>'
-STRIPE_ENDPOINT_SECRET = '<your endpoint secret here>'
+STRIPE_PUBLISHABLE_KEY = my_settings.STRIPE_PUBLISHABLE_KEY
+STRIPE_SECRET_KEY = my_settings.STRIPE_SECRET_KEY
+STRIPE_PRICE_ID = my_settings.STRIPE_PRICE_ID
+STRIPE_ENDPOINT_SECRET = my_settings.STRIPE_ENDPOINT_SECRET
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
