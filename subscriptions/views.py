@@ -16,30 +16,55 @@ def home(request):
         # Retrieve the subscription & product
         stripe_customer = StripeCustomer.objects.get(user=request.user)
         stripe.api_key = my_settings.STRIPE_SECRET_KEY
-        subscription = stripe.Subscription.retrieve(stripe_customer.stripeSubscriptionId)
-        product = stripe.Product.retrieve(subscription.plan.product)
+        if stripe_customer.stripeSubscriptionId:
+            subscription = stripe.Subscription.retrieve(stripe_customer.stripeSubscriptionId)
+            product = stripe.Product.retrieve(subscription.plan.product)
 
-        # Feel free to fetch any additional data from 'subscription' or 'product'
-        # https://stripe.com/docs/api/subscriptions/object
-        # https://stripe.com/docs/api/products/object
+            # Feel free to fetch any additional data from 'subscription' or 'product'
+            # https://stripe.com/docs/api/subscriptions/object
+            # https://stripe.com/docs/api/products/object
 
-        subscription = stripe.Subscription.create(
-            customer=stripe_customer.stripeCustomerId,
-            items=[{
-                'price': my_settings.STRIPE_FEED_PRICE_ID
-            }, {
-                'price': my_settings.STRIPE_SUB28_FEED_PRICE_ID
-            }, {
-                'price': my_settings.STRIPE_SUB29_FEED_PRICE_ID
-            }, {
-                'price': my_settings.STRIPE_SUB30_FEED_PRICE_ID
-            }, {
-                'price': my_settings.STRIPE_SUB31_FEED_PRICE_ID
-            }],
-            automatic_tax={
-                'enabled': True
-            },
-        )
+        else:
+            # payment_method = stripe.PaymentMethod.create(
+            #     type='card',
+            #     card={
+            #         'token': 'tok_1JpIWpFxsmIraXHUzdMR6mGQ'
+            #     }
+            # )
+            #
+            # stripe.PaymentMethod.attach(
+            #     payment_method.stripe_id,
+            #     customer=stripe_customer.stripeCustomerId,
+            # )
+            #
+            # stripe.Customer.modify(
+            #     stripe_customer.stripeCustomerId,
+            #     invoice_settings={'default_payment_method': payment_method.stripe_id}
+            # )
+            #
+            # subscription = stripe.Subscription.create(
+            #     customer=stripe_customer.stripeCustomerId,
+            #     items=[{
+            #         'price': my_settings.STRIPE_BASE_PRICE_ID
+            #     }, {
+            #         'price': my_settings.STRIPE_FEED_PRICE_ID
+            #     }, {
+            #         'price': my_settings.STRIPE_SUB28_FEED_PRICE_ID
+            #     }, {
+            #         'price': my_settings.STRIPE_SUB29_FEED_PRICE_ID
+            #     }, {
+            #         'price': my_settings.STRIPE_SUB30_FEED_PRICE_ID
+            #     }, {
+            #         'price': my_settings.STRIPE_SUB31_FEED_PRICE_ID
+            #     }],
+            #     # automatic_tax={
+            #     #     'enabled': True
+            #     # },
+            # )
+            #
+            # stripe_customer.stripeCustomerId = subscription.stripe_id
+            # stripe_customer.save()
+            pass
 
         return render(request, 'home.html', {
             'subscription': subscription,
@@ -74,6 +99,30 @@ def create_checkout_session(request):
                 mode='subscription',
                 line_items=[{
                     'price': my_settings.STRIPE_BASE_PRICE_ID,
+                    'quantity': 1,
+                }],
+                automatic_tax={
+                    'enabled': True
+                },
+            )
+            return JsonResponse({'sessionId': checkout_session['id']})
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
+
+
+def create_checkout_session_for_one_time(request):
+    if request.method == 'GET':
+        domain_url = 'http://localhost:8000/'
+        stripe.api_key = my_settings.STRIPE_SECRET_KEY
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                client_reference_id=request.user.id if request.user.is_authenticated else None,
+                success_url=domain_url + 'success?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=domain_url + 'cancel/',
+                payment_method_types=['card'],
+                mode='payment',
+                line_items=[{
+                    'price': my_settings.STRIPE_ONE_TIME_PRICE_ID,
                     'quantity': 1,
                 }],
                 automatic_tax={
